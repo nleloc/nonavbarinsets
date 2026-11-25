@@ -8,6 +8,6 @@
     <string name="toast_unlock_required">Needs unlock device</string>
     <string name="toast_hook_inactive">Hook inactive (enable module and tick System Framework in LSPosed &amp; reboot)</string>
     <string name="toast_no_app">No app detected behind Quick Settings</string>
-    <string name="toast_toggled_on">Spoof navbar is ON for %1$s</string>
-    <string name="toast_toggled_off">Spoof navbar is OFF for %1$s</string>
+    <string name="toast_toggled_on">Spoof navbar is now ON for %1$s</string>
+    <string name="toast_toggled_off">Spoof navbar is now OFF for %1$s</string>
 </resources>
