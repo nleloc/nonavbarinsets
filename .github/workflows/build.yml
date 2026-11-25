@@ -1,0 +1,82 @@
+name: Android CI
+# Based on workflow from  https://github.com/wxxsfxyzm/InstallerX-Revived
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          build-scan-terms-of-use-url: "https://gradle.com/help/legal-terms-of-use"
+          build-scan-terms-of-use-agree: "yes"
+          build-scan-publish: false
+          cache-read-only: true
+
+      - name: Decode and set up signing key
+        env:
+          SIGNING_KEY_STORE_BASE64: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -z "${SIGNING_STORE_PASSWORD:-}" ] || [ -z "${SIGNING_KEY_STORE_BASE64:-}" ] || [ -z "${SIGNING_KEY_PASSWORD:-}" ] || [ -z "${SIGNING_KEY_ALIAS:-}" ]; then
+            echo "Signing secrets not configured; falling back to default debug keystore."
+            exit 0
+          fi
+          mkdir -p keystore
+          printf '%s' "${SIGNING_KEY_STORE_BASE64}" | tr -d '\r\n' | base64 --decode > keystore/release.jks
+          {
+            printf 'storeFile=keystore/release.jks\n'
+            printf 'keyAlias=%s\n' "${SIGNING_KEY_ALIAS}"
+            printf 'keyPassword=%s\n' "${SIGNING_KEY_PASSWORD}"
+            printf 'storePassword=%s\n' "${SIGNING_STORE_PASSWORD}"
+          } > keystore.properties
+
+      - name: Build
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Find and rename APK
+        id: rename_apk
+        run: |
+          PROJECT_NAME="NoNavbarInsets"
+          VERSION_TAG="$(git rev-parse --short HEAD)"
+
+          APK_DIR="app/build/outputs/apk/release"
+          ORIGINAL_APK=$(find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" | head -n 1)
+
+          if [ -z "$ORIGINAL_APK" ]; then
+            echo "ERROR: APK not found in $APK_DIR"
+            ls -R app/build/outputs/apk
+            exit 1
+          fi
+
+          NEW_APK_PATH="${APK_DIR}/${PROJECT_NAME}-${VERSION_TAG}.apk"
+          echo "Renaming $ORIGINAL_APK -> $NEW_APK_PATH"
+          mv "$ORIGINAL_APK" "$NEW_APK_PATH"
+          echo "apk=${NEW_APK_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: nonavbarinsets-build
+          path: ${{ steps.rename_apk.outputs.apk }}
+          retention-days: 15

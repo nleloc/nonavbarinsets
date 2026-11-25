@@ -1,0 +1,76 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keystoreProps = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    try {
+        keystorePropertiesFile.withInputStream { keystoreProps.load(it) }
+    } catch (Exception e) {
+        println("Warning: Could not load keystore.properties file: ${e.message}")
+    }
+}
+def ksStoreFile = keystoreProps.getProperty('storeFile') ?: System.getenv('KEYSTORE_FILE')
+def ksStorePassword = keystoreProps.getProperty('storePassword') ?: System.getenv('KEYSTORE_PASSWORD')
+def ksKeyAlias = keystoreProps.getProperty('keyAlias') ?: System.getenv('KEY_ALIAS')
+def ksKeyPassword = keystoreProps.getProperty('keyPassword') ?: System.getenv('KEY_PASSWORD')
+boolean hasCustomSigning = ksStoreFile && ksStorePassword && ksKeyAlias && ksKeyPassword
+println(hasCustomSigning
+        ? 'Applying custom signing config (releaseCustom).'
+        : 'No custom signing info found; using default debug keystore.')
+
+android {
+    namespace 'io.github.nleloc.nonavbarinsets'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'io.github.nleloc.nonavbarinsets'
+        minSdk 30
+        targetSdk 36
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        if (hasCustomSigning) {
+            releaseCustom {
+                storeFile rootProject.file(ksStoreFile)
+                storePassword ksStorePassword
+                keyAlias ksKeyAlias
+                keyPassword ksKeyPassword
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
+                enableV4Signing false
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig hasCustomSigning ? signingConfigs.releaseCustom : signingConfigs.debug
+        }
+        release {
+            signingConfig hasCustomSigning ? signingConfigs.releaseCustom : signingConfigs.debug
+        }
+    }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
+    lint {
+        checkReleaseBuilds = false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    compileOnly 'io.github.libxposed:api:101.0.1'
+}

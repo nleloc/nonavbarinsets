@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoNavbarInsets</string>
+    <string name="module_description">Hide navigation bar insets from WMS with QS tile toggle per-app</string>
+    <string name="tile_label">Spoof navbar</string>
+    <string name="tile_subtitle_inactive">Module inactive</string>
+    <string name="tile_subtitle_no_app">No target app</string>
+    <string name="toast_unlock_required">Needs unlock device</string>
+    <string name="toast_hook_inactive">Hook inactive (enable module and tick System Framework in LSPosed &amp; reboot)</string>
+    <string name="toast_no_app">No app detected behind Quick Settings</string>
+    <string name="toast_toggled_on">Spoof navbar is ON for %1$s</string>
+    <string name="toast_toggled_off">Spoof navbar is OFF for %1$s</string>
+</resources>
